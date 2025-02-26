@@ -1,9 +1,15 @@
+```markdown
 # Manga Visual Evaluation Framework
 
-The **Manga Visual Evaluation Framework** is a multi-agent system designed to simulate a diverse audience to evaluate and score manga visuals. The framework leverages large language models (LLMs) (e.g., OpenAI's GPT-4) to generate image descriptions, evaluation questionnaires, scoring guidelines, and detailed personality profiles for simulated audience members. It then aggregates audience responses to produce a final score and provides a transparent explanation of the evaluation process.
+The **Manga Visual Evaluation Framework** is a multi-agent system designed to simulate a diverse audience for evaluating and scoring manga visuals. Leveraging large language models (LLMs) (e.g., OpenAI's GPT-4), the framework automatically generates detailed image descriptions, evaluation questionnaires, scoring guidelines, and personality profiles for simulated audience members. It then aggregates audience responses to produce a final score and offers a transparent explanation of the evaluation process.
 
-> **Expert Contribution:**  
-> Manga expert [Ananya Saha](https://www.drotaku.in/) (LinkedIn: [Ananya Saha](https://www.linkedin.com/in/ananya-saha-phd-dr-otaku-6259436b/)) is an **integral part** of this process. Her deep insights into manga art and storytelling are embedded in the evaluation criteria and have been critical to refining the framework.
+---
+
+## Expert Foundation
+
+**This project is built on the foundational work of manga expert [Ananya Saha](https://www.drotaku.in/).**  
+Ananya Saha is the driving force behind the evaluation criteria and the overall design of this framework. Her deep insights into manga art, storytelling, and visual narrative have been integral to the creation and ongoing refinement of this system.  
+For a deeper understanding of this repository and its underlying principles, you can connect with her on [LinkedIn](https://www.linkedin.com/in/ananya-saha-phd-dr-otaku-6259436b/).
 
 ---
 
@@ -24,73 +30,69 @@ The **Manga Visual Evaluation Framework** is a multi-agent system designed to si
 
 ## Overview
 
-This framework is built to analyze manga visuals by simulating audience feedback. Its primary objectives are:
+The framework is designed to analyze manga visuals by simulating real audience feedback. Its primary goals are to:
 
-- **Dynamic Evaluation:** Generate detailed questionnaires and scoring guidelines automatically using LLMs or use manual inputs.
-- **Diverse Audience Simulation:** Model diverse audience personalities, either by providing manual personality descriptions or generating them via LLM prompts.
-- **Image Analysis:** Generate a detailed description of the manga visual from an image file by encoding it and sending it (with additional context) to an LLM.
-- **Scoring and Aggregation:** Collect individual audience scores, enforce scoring guidelines, and compute a final aggregated score.
-- **Transparency:** Provide detailed explanations for how the final score was derived.
-
-> **Expert Contribution:**  
-> Manga expert [Ananya Saha](https://www.drotaku.in/) is an integral part of this process. Her expertise in manga art and narrative significantly informs the evaluation criteria, ensuring that the framework's outcomes are both rigorous and relevant.
+- **Dynamically Evaluate:** Generate detailed questionnaires and scoring guidelines either automatically via LLMs or through manual input.
+- **Simulate a Diverse Audience:** Model varied audience personalities by either providing manual personality details or generating them using LLM prompts.
+- **Process Images:** Produce detailed descriptions of manga visuals from image files by encoding and processing them through LLMs.
+- **Aggregate Scores:** Collect individual scores, validate responses against guidelines, and compute a final aggregated score.
+- **Ensure Transparency:** Offer a clear explanation of how the final score was derived.
 
 ---
 
 ## Features
 
 - **Flexible Inputs:**  
-  - **Guidelines:** Manually provide scoring guidelines or generate them using a prompt.
-  - **Questionnaire:** Either supply a custom questionnaire or let the LLM generate one based on user prompt and expert context.
-  - **Audience Personalities:** Customize personality details manually or generate them via LLM prompts.
-  - **Image Input:** Accept an image file path to generate a description of the manga visual.
+  - **Guidelines:** Supply manual scoring guidelines or generate them using LLM prompts.
+  - **Questionnaire:** Either provide a custom questionnaire or have the LLM generate one based on a user prompt and expert context.
+  - **Audience Personalities:** Customize personality profiles manually or generate them via LLM prompts.
+  - **Image Input:** Accept an image file path to generate a detailed description of the manga visual.
 
 - **Multi-Agent Simulation:**  
-  Each audience member (representative of a distinct personality type) receives a tailored image description (integrating the questionnaire) and evaluates the visual on a consistent 1-to-10 scale.
+  Each audience member, representing a unique personality type, receives a tailored image description (integrating the questionnaire) and evaluates the visual on a consistent 1-to-10 scale.
 
 - **LLM-Powered Processing:**  
-  The system uses LLMs to generate natural language outputs for:
-  - Image descriptions (using OpenAI's image description method with base64 encoding).
-  - Questionnaires.
-  - Guidelines.
+  The system utilizes LLMs to generate:
+  - Detailed image descriptions (using OpenAI's image description method with base64 encoding).
+  - Questionnaires and scoring guidelines.
   - Audience personality profiles.
   - Explanations of the scoring process.
 
 - **Detailed Reporting:**  
-  The framework aggregates individual scores and provides a comprehensive explanation of the evaluation process, ensuring transparency.
+  The framework aggregates scores and provides a comprehensive explanation of the evaluation process, ensuring complete transparency.
 
-- **Extensible and Modular:**  
-  The design is modular, allowing you to swap or improve individual components (e.g., change the LLM provider or adjust the evaluation criteria).
+- **Modular and Extensible:**  
+  Easily swap or enhance individual components (e.g., change LLM providers or adjust evaluation criteria).
 
 ---
 
 ## Architecture
 
-The framework consists of the following key components:
+The framework is composed of several key components:
 
 1. **Image Description Module:**  
-   - **Functionality:** Encodes an input image, sends it with a tailored prompt to OpenAI's API, and retrieves a detailed textual description.
-   - **Usage:** Used as the basis for evaluating the manga visual.
+   - **Function:** Encodes an input image, sends it along with a tailored prompt to OpenAI's API, and retrieves a detailed textual description.
+   - **Usage:** Acts as the basis for evaluating the manga visual.
 
 2. **Questionnaire Generator:**  
-   - **Functionality:** Generates a list of evaluation questions based on user prompt and expert context, or accepts a manual questionnaire.
+   - **Function:** Generates evaluation questions based on a user prompt and expert context, or accepts a manually defined questionnaire.
    - **Output:** A numbered list of questions focusing on art quality, character design, narrative impact, and emotional tone.
 
 3. **Guidelines Generator:**  
-   - **Functionality:** Generates or accepts scoring guidelines that define the evaluation criteria and ensure consistency in scoring.
-   - **Output:** A guideline string that is used to validate audience responses.
+   - **Function:** Generates or accepts scoring guidelines that ensure consistency in evaluation.
+   - **Output:** A guideline string used to validate audience responses.
 
 4. **Audience Personality Module:**  
-   - **Functionality:** Generates or accepts manual personality profiles for each simulated audience member.  
+   - **Function:** Generates or accepts manual personality profiles for each simulated audience member.
    - **Note:** Each audience number represents a representative member of a distinct personality type.
 
 5. **Audience Response Simulator:**  
-   - **Functionality:** For each audience member, it combines the tailored image description with the questionnaire and personality details.  
-   - **Output:** A simulated response with scores and justifications for each question.
+   - **Function:** Combines the tailored image description with the questionnaire and personality details to simulate audience responses.
+   - **Output:** Simulated responses with scores and justifications for each evaluation question.
 
 6. **Guideline Enforcement & Aggregation Module:**  
-   - **Functionality:** Validates that audience responses adhere to guidelines and aggregates the scores to compute a final score.
-   - **Output:** A final aggregated score and a detailed explanation of the scoring process.
+   - **Function:** Validates that audience responses adhere to the scoring guidelines and aggregates scores to compute a final result.
+   - **Output:** Final aggregated score and a detailed explanation of the scoring process.
 
 ---
 
@@ -105,7 +107,7 @@ The framework consists of the following key components:
 
 2. **Install Dependencies:**
 
-   This project requires Python 3.7 or later. Install the required packages:
+   Ensure you have Python 3.7 or later. Install the required packages:
 
    ```bash
    pip install -r requirements.txt
@@ -115,11 +117,11 @@ The framework consists of the following key components:
    - `openai`
    - `python-dotenv`
    - `requests`
-   - (Any other dependencies required by your project)
+   - (Other dependencies as required)
 
-3. **Environment Variables:**
+3. **Set Up Environment Variables:**
 
-   Create a `.env` file in the project root directory with the following variables:
+   Create a `.env` file in the project root directory with the following content:
 
    ```env
    OPENAI_API_KEY=your_openai_api_key
@@ -132,14 +134,13 @@ The framework consists of the following key components:
 
 ## Configuration
 
-The framework allows flexible configuration:
+The framework supports flexible configuration:
 - **Manual vs. Generated Inputs:**  
-  - You can supply manual inputs for guidelines, questionnaires, and audience personalities.
-  - Alternatively, you can provide prompts to generate these components using the LLM.
+  - Supply manual guidelines, questionnaires, and audience personality details, or provide prompts for LLM generation.
 - **Display Options:**  
-  - Set a flag (`show_generated_components`) to `True` to print out any generated guidelines, questionnaires, or audience personality profiles for review.
+  - Enable a flag (`show_generated_components`) to print generated guidelines, questionnaires, or audience personality profiles for review.
 
-Edit the parameters in the main execution block of `script.py` as needed.
+Edit the configuration parameters in the main execution block (`script.py`) as required.
 
 ---
 
@@ -148,30 +149,30 @@ Edit the parameters in the main execution block of `script.py` as needed.
 Run the framework from the command line by providing the path to a manga image:
 
 ```bash
-python script.py path/to/manga_image.jpg
+python script.py 
 ```
 
 ### Workflow
 
 1. **Image Description:**  
-   The system encodes the input image and sends it along with a detailed prompt (including questionnaire context) to generate a description.
+   The system encodes the input image and sends it along with a detailed prompt (that includes questionnaire context) to generate a comprehensive image description.
 
-2. **Questionnaire and Guidelines:**  
-   - The framework either uses manually provided questionnaires and guidelines or generates them via LLM prompts.
-   - If generated, these components are displayed (if `show_generated_components` is enabled).
+2. **Questionnaire & Guidelines:**  
+   - The framework uses manually provided or LLM-generated questionnaires and guidelines.
+   - Generated components are displayed if `show_generated_components` is enabled.
 
 3. **Simulated Audience Responses:**  
-   - For each representative audience member (each with a unique personality), a tailored image description is generated.
-   - The audience then answers the questionnaire based on that description.
-   - The user can either provide manual personality details or let the LLM generate them.
+   - Each representative audience member (each with a unique personality) receives a tailored image description.
+   - The audience then responds to the questionnaire based on that description.
+   - The system supports manual or LLM-generated personality profiles.
 
-4. **Validation and Aggregation:**  
-   - Audience responses are validated against the provided/generated guidelines.
+4. **Validation & Aggregation:**  
+   - Audience responses are validated against the scoring guidelines.
    - Scores are aggregated to produce a final score.
    - A detailed explanation of the scoring process is generated.
 
 5. **Output:**  
-   The final aggregated score, validated responses, and an explanation of the process are printed to the console.
+   The final aggregated score, validated responses, and a detailed explanation are printed to the console.
 
 ---
 
@@ -184,10 +185,10 @@ python script.py path/to/manga_image.jpg
 - **Questionnaire Parameters:**  
   - **User Prompt:** e.g., "Focus on dynamic action scenes and vibrant color usage."
   - **Expert Context:** e.g., "The visuals should clearly convey movement and emotion with well-composed action sequences."
-  - **(Optional) Manual Questionnaire:** A pre-defined questionnaire string.
+  - **(Optional) Manual Questionnaire:** A predefined questionnaire string.
 
 - **Guidelines Parameters:**  
-  - **(Optional) Manual Guidelines:** A pre-defined guidelines string.
+  - **(Optional) Manual Guidelines:** A predefined guidelines string.
   - **Guidelines Prompt:** e.g., "Generate guidelines for scoring manga visuals based on art quality, character design, narrative, and emotional impact."
 
 - **Audience Personality Parameters:**  
@@ -208,56 +209,56 @@ python script.py path/to/manga_image.jpg
   Each audience member (representing a distinct personality type) produces scores and justifications for each evaluation question.
 
 - **Validated Audience Responses:**  
-  Audience responses that have been checked against the scoring guidelines.
+  Audience responses that are checked against the scoring guidelines.
 
 - **Final Aggregated Score:**  
   The average score computed from all audience responses.
 
 - **Process Explanation:**  
-  A detailed explanation of how the final score was derived, including insights and corrections made during the validation process.
+  A detailed explanation of how the final score was derived, including insights and corrections made during validation.
 
-- **(Optional) Generated Components Display:**  
-  If enabled, the generated guidelines, questionnaire, and audience personality profiles are printed.
+- **(Optional) Display of Generated Components:**  
+  If enabled, generated guidelines, questionnaire, and audience personality profiles are printed.
 
 ---
 
 ## Improvement Areas
 
-While the current framework provides a robust starting point for evaluating manga visuals using LLM-based simulation, there are several areas for improvement:
+While this framework is a robust starting point for evaluating manga visuals using LLM-based simulation, several areas can be enhanced:
 
 1. **Enhanced Image Processing:**
-   - Integrate a dedicated image captioning model or service that accepts image binaries directly.
-   - Improve error handling for image upload/encoding.
+   - Integrate dedicated image captioning models that accept image binaries directly.
+   - Improve error handling during image upload and encoding.
 
 2. **LLM Provider Flexibility:**
-   - Add support for additional LLM providers such as Anthropic’s Claude or Google Gemini.
-   - Provide a fallback mechanism if one provider fails.
+   - Support additional LLM providers such as Anthropic’s Claude or Google Gemini.
+   - Implement a fallback mechanism if one provider fails.
 
 3. **Response Parsing and Validation:**
-   - Improve the parsing of audience responses to extract numeric scores more reliably.
-   - Implement advanced natural language processing techniques to better validate and correct responses.
+   - Enhance parsing of audience responses to reliably extract numeric scores.
+   - Use advanced natural language processing to validate and correct responses more effectively.
 
 4. **User Interface:**
-   - Develop a web-based or GUI interface for ease of use.
-   - Provide visualizations for aggregated scores and process explanations.
+   - Develop a web-based or GUI interface for a more user-friendly experience.
+   - Include visualizations for aggregated scores and process explanations.
 
 5. **Customization and Extensibility:**
-   - Allow more granular control over the evaluation criteria.
-   - Enable saving and loading of custom guidelines, questionnaires, and audience profiles for repeated use.
+   - Allow more granular control over evaluation criteria.
+   - Enable saving/loading of custom guidelines, questionnaires, and audience profiles for reuse.
 
 6. **Scalability:**
-   - Optimize API calls and parallelize audience simulation to handle larger volumes.
-   - Integrate caching mechanisms for repeated image descriptions or LLM responses.
+   - Optimize API calls and parallelize audience simulation for larger volumes.
+   - Integrate caching for repeated image descriptions or LLM responses.
 
 7. **Security and Compliance:**
-   - Ensure that sensitive API keys and user data are securely managed.
+   - Ensure secure management of sensitive API keys and user data.
    - Comply with data privacy regulations when integrating with third-party services.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! If you have ideas for improvement, bug fixes, or additional features, please open an issue or submit a pull request.
+Contributions are welcome! If you have ideas for improvements, bug fixes, or additional features, please open an issue or submit a pull request.
 
 1. Fork the repository.
 2. Create a new branch for your feature or bug fix.
@@ -272,6 +273,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ---
 
-By combining the power of LLMs with a modular, multi-agent design, this framework provides a unique and flexible approach to evaluating manga visuals. Whether you choose to supply your own guidelines, questionnaires, and audience personalities or let the LLM generate them, the framework adapts to your needs and produces transparent, reproducible results.
+By combining the power of LLMs with a modular, multi-agent design, this framework provides a flexible and transparent approach to evaluating manga visuals. Whether you choose to supply your own guidelines, questionnaires, and audience personalities or let the LLM generate them, the framework adapts to your needs and produces reproducible results.
 
-Happy evaluating!
+**Happy Evaluating!**
+```
