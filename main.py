@@ -1,4 +1,4 @@
-from AgentsWorkflow.AgentParliament import *
+from AgentsFramework.AgentParliament.AgentParliament import *
 
 # --- Main Function ---
 def main():
