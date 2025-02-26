@@ -4,6 +4,7 @@ import requests
 import json
 from openai import OpenAI
 from dotenv import load_dotenv
+import base64
 
 load_dotenv()
 
@@ -12,6 +13,13 @@ HUGGINGFACE_API_KEY = os.getenv("HUGGINGFACE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Hypothetical
+
+
+# Function to encode the image
+def encode_image(image_path):
+    with open(image_path, "rb") as image_file:
+        return base64.b64encode(image_file.read()).decode("utf-8")
+
 
 # If using the official OpenAI Python library:
 
@@ -139,4 +147,45 @@ def generate_llm_response(prompt, provider="openai", model="gpt-4o", temperature
     
     except Exception as e:
         return f"LLM Error: {str(e)}"
+    
+    
+def generate_image_description(image_path, prompt,provider="openai", model="gpt-4o-mini",temperature=0.7):
+    """
+    Generates an image description using OpenAI's API.
+    Since OpenAI's API does not accept image binary directly for captioning,
+    the image is assumed to be available at a public URL.
+    
+    :param image_path: Path to the input image.
+    :param provider: LLM provider, default 'openai'.
+    :param model: LLM model name.
+    :param temperature: Sampling temperature.
+    :return: A generated caption describing the image.
+    """
+    client = OpenAI(api_key=OPENAI_API_KEY) 
+    
+    image_path = image_path
+    base64_image = encode_image(image_path)
+    response = client.chat.completions.create(
+                                            model=model,
+                                            messages=[
+                                                                    {
+                                                                        "role": "user",
+                                                                        "content": [
+                                                                            {
+                                                                                "type": "text",
+                                                                                "text": prompt,
+                                                                            },
+                                                                            {
+                                                                                "type": "image_url",
+                                                                                "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"},
+                                                                            },
+                                                                        ],
+                                                                    }
+                                                                ],
+                                                            )
+
+
+
+    return response.choices[0].message.content
+    
 
