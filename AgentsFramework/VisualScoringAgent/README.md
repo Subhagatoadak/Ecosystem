@@ -2,8 +2,8 @@
 
 The **Manga Visual Evaluation Framework** is a multi-agent system designed to simulate a diverse audience to evaluate and score manga visuals. The framework leverages large language models (LLMs) (e.g., OpenAI's GPT-4) to generate image descriptions, evaluation questionnaires, scoring guidelines, and detailed personality profiles for simulated audience members. It then aggregates audience responses to produce a final score and provides a transparent explanation of the evaluation process.
 
-> **Manga Expert Involvement:**  
-> This project is proudly supported by manga expert [Ananya Saha](https://www.drotaku.in/). You can also connect with her on [LinkedIn](https://www.linkedin.com/in/ananya-saha-phd-dr-otaku-6259436b/). Her deep insights into manga art and storytelling have been instrumental in shaping the evaluation criteria and refining the framework.
+> **Expert Contribution:**  
+> Manga expert [Ananya Saha](https://www.drotaku.in/) (LinkedIn: [Ananya Saha](https://www.linkedin.com/in/ananya-saha-phd-dr-otaku-6259436b/)) is an **integral part** of this process. Her deep insights into manga art and storytelling are embedded in the evaluation criteria and have been critical to refining the framework.
 
 ---
 
@@ -33,7 +33,7 @@ This framework is built to analyze manga visuals by simulating audience feedback
 - **Transparency:** Provide detailed explanations for how the final score was derived.
 
 > **Expert Contribution:**  
-> Manga expert [Ananya Saha](https://www.drotaku.in/) (LinkedIn: [Ananya Saha](https://www.linkedin.com/in/ananya-saha-phd-dr-otaku-6259436b/)) is actively involved in this project, offering her expertise to ensure that the evaluation criteria are both relevant and rigorous.
+> Manga expert [Ananya Saha](https://www.drotaku.in/) is an integral part of this process. Her expertise in manga art and narrative significantly informs the evaluation criteria, ensuring that the framework's outcomes are both rigorous and relevant.
 
 ---
 
