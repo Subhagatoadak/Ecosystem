@@ -1,4 +1,4 @@
-```markdown
+
 # Manga Visual Evaluation Framework
 
 The **Manga Visual Evaluation Framework** is a multi-agent system designed to simulate a diverse audience for evaluating and scoring manga visuals. Leveraging large language models (LLMs) (e.g., OpenAI's GPT-4), the framework automatically generates detailed image descriptions, evaluation questionnaires, scoring guidelines, and personality profiles for simulated audience members. It then aggregates audience responses to produce a final score and offers a transparent explanation of the evaluation process.
