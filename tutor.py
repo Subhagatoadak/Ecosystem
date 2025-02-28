@@ -1,6 +1,4 @@
 import streamlit as st
-import requests
-import os
 from PIL import Image
 
 # For image classification (placeholder)
@@ -9,31 +7,45 @@ from llm_service.llm_generator import generate_llm_response
 ##############################################
 # Interview & Assessment Functionality
 ##############################################
+
+
 def assess_answer(answer):
     """
-    Uses LLM to evaluate an interview answer. The prompt asks for assessment on clarity,
+    Uses LLM to evaluate an interview answer.
+    The prompt asks for assessment on clarity,
     content, tonality, and provides improvement suggestions.
     """
     prompt = (
-        "You are an experienced interviewer and coach. Evaluate the following answer for clarity, "
-        "content, and tonality. Provide detailed feedback on strengths and improvement steps, including "
+        "You are an experienced interviewer and coach.\
+        Evaluate the following answer for clarity, ",
+        "content, and tonality.",
+        "Provide detailed feedback on strengths\
+        and improvement steps, including "
         "tips on how to improve tonality. Answer:\n\n"
         f"{answer}\n\n"
         "Please provide a concise evaluation and actionable improvement tips."
     )
-    return generate_llm_response(prompt, provider="openai", model="gpt-4o", temperature=0.7)
+    return generate_llm_response(prompt,
+                                 provider="openai",
+                                 model="gpt-4o",
+                                 temperature=0.7)
 
 ##############################################
 # Attire Analysis (Image Description)
 ##############################################
+
+
 def analyze_formal_wear(image_file):
     """
-    Uses an image classification pipeline to simulate analysis of whether the user is wearing formal attire.
+    Uses an image classification pipeline to simulate analysis
+    of whether the user is wearing formal attire.
     In production, replace or refine with a dedicated clothing detection model.
     """
     try:
-        # Load a pre-trained image classification pipeline (this may download the model on first run)
-        classifier = pipeline("image-classification", model="google/vit-base-patch16-224")
+        # Load a pre-trained image classification pipeline
+        # (this may download the model on first run)
+        classifier = pipeline("image-classification",
+                              model="google/vit-base-patch16-224")
         image = Image.open(image_file)
         predictions = classifier(image)
         # Look for keywords related to formal clothing
@@ -55,20 +67,26 @@ def analyze_formal_wear(image_file):
 ##############################################
 # Web Resource Search Functionality
 ##############################################
+
+
 def search_web_resources(query):
     """
     Uses the LLM to simulate a web search for high-quality learning resources.
     """
     prompt = f"List some high-quality online resources (articles, tutorials, videos) to learn about {query}."
-    response = generate_llm_response(prompt, provider="openai", model="gpt-4o", temperature=0.7)
+    response = generate_llm_response(prompt,
+                                     provider="openai",
+                                     model="gpt-4o",
+                                     temperature=0.7)
     return response
 
 ##############################################
 # Streamlit App Main Function
 ##############################################
+
+
 def main():
     st.set_page_config(page_title="GenAI Tutor", layout="wide")
-    
     # Inject custom CSS for an ultra-modern, colorful UI
     st.markdown(
         """
@@ -101,7 +119,6 @@ def main():
     )
 
     st.title("GenAI Tutor: Learn Python & Generative AI")
-    
     # Sidebar Navigation for multiple modes
     app_mode = st.sidebar.selectbox("Choose the App Mode", [
         "Chatbot",
@@ -110,7 +127,6 @@ def main():
         "Interview & Assessment",
         "Attire Analysis"
     ])
-    
     ##############################################
     # Chatbot Mode
     ##############################################
@@ -125,7 +141,6 @@ def main():
                 response = generate_llm_response(prompt, provider=provider, model=model, temperature=temperature)
             st.markdown("**Response:**")
             st.write(response)
-    
     ##############################################
     # Web Resource Search Mode
     ##############################################
@@ -137,7 +152,6 @@ def main():
                 search_results = search_web_resources(query)
             st.markdown("**Search Results:**")
             st.write(search_results)
-    
     ##############################################
     # GenAI Tutor Lessons Mode
     ##############################################
@@ -159,18 +173,16 @@ def main():
                 lesson_content = generate_llm_response(lesson_prompt, provider="openai", model="gpt-4o", temperature=0.7)
             st.markdown("**Lesson Content:**")
             st.write(lesson_content)
-    
     ##############################################
     # Interview & Assessment Mode
     ##############################################
     elif app_mode == "Interview & Assessment":
         st.header("Interview & Assessment")
         st.markdown("### Practice Interview")
-        interview_question = st.text_area("Interview Question (or use a default one):", 
+        interview_question = st.text_area("Interview Question (or use a default one):",
                                           value="Describe a challenging project you have worked on and how you overcame difficulties.")
         if st.button("Generate Interview Question"):
             st.info("Use the above question for your practice interview.")
-        
         st.markdown("### Your Answer")
         user_answer = st.text_area("Type your answer here:")
         if st.button("Assess My Answer"):
@@ -181,7 +193,6 @@ def main():
                     evaluation = assess_answer(user_answer)
                 st.markdown("**Evaluation & Improvement Tips:**")
                 st.write(evaluation)
-    
     ##############################################
     # Attire Analysis Mode
     ##############################################
@@ -195,6 +206,7 @@ def main():
             st.markdown("**Analysis Result:**")
             st.write(result)
             st.image(Image.open(image_file), caption="Uploaded Image", use_column_width=True)
+
 
 if __name__ == "__main__":
     main()
