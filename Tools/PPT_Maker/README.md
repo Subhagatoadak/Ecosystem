@@ -111,7 +111,7 @@ The **Advanced PPT Creator App** is a modern, intuitive web application built wi
    From the project root directory, run:
 
    ```bash
-   streamlit run Tools/PPT_Maker/ppt_maker.py
+   streamlit run Tools/PPT_Maker/ppt_maker_modern.py
    ```
 
 2. **Using the App:**
