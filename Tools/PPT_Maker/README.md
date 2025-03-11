@@ -47,7 +47,7 @@ The **Advanced PPT Creator App** is a modern, intuitive web application built wi
 
 ## Demo
 
-![PPT Creator Demo](![PPT Maker](https://github.com/user-attachments/assets/a86b2ebf-6c41-42bb-92bd-73a53696c871)
+![PPT Creator Demo](https://github.com/user-attachments/assets/a86b2ebf-6c41-42bb-92bd-73a53696c871)
 )  
 *Screenshot of the advanced PPT Creator App in action (replace with your own screenshot).*
 
