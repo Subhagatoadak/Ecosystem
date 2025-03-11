@@ -97,7 +97,7 @@ The **Advanced PPT Creator App** is a modern, intuitive web application built wi
    │   ├── __init__.py
    │   └── llm_generator.py
    ├── tools/
-   │   └── ppt_maker/
+   │   └── PPT_Maker/
    │       ├── __init__.py
    │       └── ppt_maker_modern.py
    ├── requirements.txt
@@ -141,7 +141,7 @@ advanced-ppt-creator/
 │   ├── __init__.py
 │   └── llm_generator.py       # Contains the `generate_llm_response` function.
 ├── tools/
-│   └── ppt_maker/
+│   └── PPT_Maker/
 │       ├── __init__.py
 │       └── ppt_maker_modern.py       # Main Streamlit app for creating PPTs.
 ├── requirements.txt           # List of project dependencies.
