@@ -99,7 +99,7 @@ The **Advanced PPT Creator App** is a modern, intuitive web application built wi
    ├── tools/
    │   └── ppt_maker/
    │       ├── __init__.py
-   │       └── ppt_maker.py
+   │       └── ppt_maker_modern.py
    ├── requirements.txt
    └── README.md
    ```
@@ -143,7 +143,7 @@ advanced-ppt-creator/
 ├── tools/
 │   └── ppt_maker/
 │       ├── __init__.py
-│       └── ppt_maker.py       # Main Streamlit app for creating PPTs.
+│       └── ppt_maker_modern.py       # Main Streamlit app for creating PPTs.
 ├── requirements.txt           # List of project dependencies.
 └── README.md                  # Project documentation.
 ```
