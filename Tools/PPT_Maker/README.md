@@ -4,7 +4,8 @@ Here’s a detailed **GitHub README** for **SlideCraft Pro**, your advanced AI-p
 
 # 🎨 SlideCraft Pro - AI-Powered Presentation Builder 🚀  
 
-![SlideCraft Pro](https://img.shields.io/badge/PowerPoint-Builder-blue)  
+![SlideCraft Pro](https://github.com/user-attachments/assets/b2519126-31e4-40dd-87c9-5ce5132a7efb)
+
 **Create stunning, AI-powered PowerPoint presentations effortlessly!**  
 
 SlideCraft Pro is a **modern, intuitive, and feature-rich** PowerPoint presentation builder that allows you to:  
