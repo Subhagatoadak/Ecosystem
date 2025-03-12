@@ -11,6 +11,7 @@ from llm_service.llm_generator import generate_llm_response, generate_llm_json
 import streamlit as st
 from pptx import Presentation
 from pptx.util import Inches, Pt
+from pptx.dml.color import RGBColor
 
 # For charts
 from pptx.chart.data import CategoryChartData
@@ -19,6 +20,14 @@ from pptx.enum.chart import XL_CHART_TYPE
 # Pydantic model for JSON output
 class SlideEvent(BaseModel):
     content: list[str]
+
+# Theme defaults for when no template is uploaded.
+THEME_DEFAULTS = {
+    "Default": {"bg_color": None, "font_color": None},
+    "Dark": {"bg_color": RGBColor(50, 50, 50), "font_color": RGBColor(255, 255, 255)},
+    "Corporate": {"bg_color": RGBColor(240, 240, 240), "font_color": RGBColor(0, 0, 0)},
+    "Creative": {"bg_color": RGBColor(255, 228, 196), "font_color": RGBColor(75, 0, 130)},
+}
 
 # Set page config for a modern wide layout
 st.set_page_config(page_title="SlideCraft Pro", page_icon="📊", layout="wide")
@@ -67,10 +76,12 @@ st.sidebar.title("Instructions")
 st.sidebar.info(
     "Welcome to the SlideCraft Pro!\n\n"
     "1. Fill in your presentation details on the main page.\n"
-    "2. Optionally add background images for title, sections, and slides.\n"
-    "3. You can manually create sections and slides or auto-generate slides using AI.\n"
-    "4. For manual slides, add rich content with custom fonts, images, charts, and improvement tips.\n"
-    "5. When using foreground images, you can upload multiple images.\n\n"
+    "2. Optionally upload a PPTX template file to extract its design and layouts.\n"
+    "3. If no template is uploaded, choose a theme for the whole presentation.\n"
+    "4. Optionally add background images for title, sections, and slides.\n"
+    "5. You can manually create sections and slides or auto-generate slides using AI.\n"
+    "6. For manual slides, add rich content with custom fonts, images, charts, and improvement tips.\n"
+    "7. When using foreground images, you can upload multiple images.\n\n"
     "Click 'Generate PPT' when you're ready to download your presentation."
 )
 
@@ -98,10 +109,13 @@ chart_type_options = {
     "Scatter": XL_CHART_TYPE.XY_SCATTER
 }
 
-def create_presentation(presentation_title, description, author,
-                        title_bg_bytes, common_content_bg_bytes,
-                        sections_data):
-    prs = Presentation()
+def create_presentation(presentation_title, description, author, template_file, theme_choice,
+                        title_bg_bytes, common_content_bg_bytes, sections_data):
+    # Use the uploaded template if provided; otherwise create a blank presentation.
+    if template_file is not None:
+        prs = Presentation(template_file)
+    else:
+        prs = Presentation()
     
     # (Optional) Debug: print available layouts.
     for i, layout in enumerate(prs.slide_layouts):
@@ -121,6 +135,11 @@ def create_presentation(presentation_title, description, author,
         # Move image behind other shapes.
         bg._element.getparent().remove(bg._element)
         slide.shapes._spTree.insert(2, bg._element)
+    elif not common_content_bg_bytes and (not template_file) and theme_choice and theme_choice != "Default":
+        # Apply theme background to title slide if no background image is provided.
+        fill = slide.background.fill
+        fill.solid()
+        fill.fore_color.rgb = THEME_DEFAULTS[theme_choice]["bg_color"]
     
     slide.shapes.title.text = presentation_title
     if len(slide.placeholders) > 1:
@@ -161,6 +180,10 @@ def create_presentation(presentation_title, description, author,
                                               height=prs.slide_height)
             bg._element.getparent().remove(bg._element)
             sec_slide.shapes._spTree.insert(2, bg._element)
+        elif not common_content_bg_bytes and (not template_file) and theme_choice and theme_choice != "Default":
+            fill = sec_slide.background.fill
+            fill.solid()
+            fill.fore_color.rgb = THEME_DEFAULTS[theme_choice]["bg_color"]
         
         # Create slides for this section.
         for idx, slide_data in enumerate(slides):
@@ -200,12 +223,12 @@ def create_presentation(presentation_title, description, author,
                     for run in paragraph.runs:
                         run.font.size = Pt(font_size)
                         run.font.name = font_type
+                        if (not template_file) and theme_choice and theme_choice != "Default" and THEME_DEFAULTS[theme_choice]["font_color"]:
+                            run.font.color.rgb = THEME_DEFAULTS[theme_choice]["font_color"]
             
             # Add images if provided.
             if image_data:
-                # If foreground, image_data is expected to be a list.
                 if image_type == "foreground" and isinstance(image_data, list):
-                    # Position images horizontally from right to left.
                     margin = Inches(0.5)
                     img_width = Inches(3)
                     x = prs.slide_width - img_width - margin
@@ -215,7 +238,6 @@ def create_presentation(presentation_title, description, author,
                         new_slide.shapes.add_picture(img_stream, x, y, width=img_width)
                         x -= (img_width + Inches(0.2))
                 else:
-                    # For background images or single foreground images.
                     if isinstance(image_data, list):
                         image_data = image_data[0]
                     img_stream = io.BytesIO(image_data)
@@ -224,6 +246,11 @@ def create_presentation(presentation_title, description, author,
                                                        height=prs.slide_height)
                     pic._element.getparent().remove(pic._element)
                     new_slide.shapes._spTree.insert(2, pic._element)
+            elif not common_content_bg_bytes and (not template_file) and theme_choice and theme_choice != "Default":
+                # If no image is provided and no common background, apply theme background.
+                fill = new_slide.background.fill
+                fill.solid()
+                fill.fore_color.rgb = THEME_DEFAULTS[theme_choice]["bg_color"]
             
             # Add a chart if requested.
             if chart_type:
@@ -258,6 +285,15 @@ def main():
     with col2:
         author = st.text_input("Author", "John Doe")
     description = st.text_area("Description", "This is a description for the presentation.")
+    
+    st.markdown("---")
+    
+    # --- PPT Template Upload ---
+    ppt_template = st.file_uploader("Upload PPT Template (optional)", type=["pptx"], key="ppt_template")
+    if ppt_template is None:
+        theme_choice = st.selectbox("Choose a Theme", ["Default", "Dark", "Corporate", "Creative"])
+    else:
+        theme_choice = None
     
     st.markdown("---")
     
@@ -328,7 +364,7 @@ def main():
                             ai_prompt_manual = ""
                             font_size = 24  # default
                             font_type = "Calibri"  # default
-                            # Improvement tips will be auto-generated by AI regardless.
+                            # Improvement tips will be auto-generated by AI below.
                             improvement_tips = ""
                             if add_content:
                                 content = st.text_area(f"Content for Slide {i+1}", key=f"content_{s}_{i}")
@@ -460,8 +496,8 @@ def main():
                     slide_data["improvement_tips"] = "No content provided for improvement tips."
     
         ppt_file = create_presentation(presentation_title, description, author,
-                                    title_bg_bytes, common_content_bg_bytes,
-                                    sections_data)
+                                       ppt_template, theme_choice, title_bg_bytes, common_content_bg_bytes,
+                                       sections_data)
         st.success("Presentation generated successfully!")
         st.download_button(
             label="Download PPT",
