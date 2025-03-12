@@ -187,5 +187,20 @@ def generate_image_description(image_path, prompt,provider="openai", model="gpt-
 
 
     return response.choices[0].message.content
-    
 
+
+
+def generate_llm_json(prompt,event,provider="openai", model="gpt-4o-2024-08-06",temperature=0.7):
+    try:
+        if provider.lower() == "openai":
+            client = OpenAI(api_key=OPENAI_API_KEY)
+            completion = client.beta.chat.completions.parse(
+            model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=temperature,
+            response_format=event,
+            )
+            return completion.choices[0].message.parsed
+    except Exception as e:
+        return f"LLM Error: {str(e)}"
+    
