@@ -3,6 +3,11 @@ from PIL import Image
 
 # For image classification (placeholder)
 from transformers import pipeline
+import os,sys
+
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
 from llm_service.llm_generator import generate_llm_response
 ##############################################
 # Interview & Assessment Functionality
