@@ -37,11 +37,7 @@ SlideCraft Pro is a **modern, intuitive, and feature-rich** PowerPoint presentat
 ### 📥 **Download & Use Instantly**
 - Once your slides are ready, **download** the **PPTX** file in one click.  
 
----
-## 📸 Screenshots  
 
-![SlideCraft UI](https://your-image-link.com)  
-*(Example of modern UI - Replace with actual image)*  
 
 ---
 ## 🚀 Getting Started  
