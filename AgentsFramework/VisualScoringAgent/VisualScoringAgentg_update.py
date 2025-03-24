@@ -8,6 +8,13 @@
 # - semopy for Structural Equation Modeling (SEM) analysis.
 # - pandas for data manipulation.
 # - networkx for building and analyzing social network graphs.
+
+import os 
+import sys
+# Add the root directory to sys.path if not already there.
+root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if root_path not in sys.path:
+    sys.path.insert(0, root_path)
 from llm_service.llm_generator import generate_llm_response, generate_image_description
 import logging
 import numpy as np
@@ -22,6 +29,10 @@ from sentence_transformers import SentenceTransformer
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
+
+from PIL import Image
+import torch
+import clip
 
 # Set up basic logging configuration for debugging.
 logging.basicConfig(level=logging.INFO)
@@ -232,38 +243,72 @@ class LLM_MangaScoringFramework:
             )
         return personality
 
-    def simulate_audience_responses(self, image_path, questionnaire, num_profiles=5, audience_personalities=None, audience_personality_prompt=None):
+    def extract_image_features(self, image_path):
         """
-        Simulates responses from multiple audience members.
+        Extracts visual features from the image using the CLIP model and returns a textual summary.
         
         Parameters:
-          image_path: Path to the manga visual image.
-          questionnaire: The questionnaire text for evaluating the image.
-          num_profiles: Number of audience members to simulate.
-          audience_personalities: Optional list of pre-generated personality profiles.
-          audience_personality_prompt: Prompt for generating personality profiles if not provided.
+        image_path: Path to the image file.
         
         Returns:
-          A tuple containing:
+        A string summarizing a few values from the image embedding.
+        """
+        # Use CUDA if available.
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        # Load the pre-trained CLIP model and preprocessing pipeline.
+        model, preprocess = clip.load("ViT-B/32", device=device)
+        try:
+            image = Image.open(image_path).convert("RGB")
+        except Exception as e:
+            logger.error("Failed to open image %s: %s", image_path, e)
+            return "Image features unavailable."
+        
+        # Preprocess and encode the image.
+        image_input = preprocess(image).unsqueeze(0).to(device)
+        with torch.no_grad():
+            image_features = model.encode_image(image_input)
+        
+        # Convert the embedding into a simple textual summary.
+        # For demonstration, we return the first 5 values of the embedding.
+        feature_summary = f"Image Features (first 5 values): {image_features[0][:5].cpu().numpy().tolist()}"
+        return feature_summary
+    
+    def simulate_audience_responses(self, image_path, questionnaire, num_profiles=5, audience_personalities=None, audience_personality_prompt=None):
+        """
+        Simulates responses from multiple audience members, incorporating both text and image features.
+        
+        Parameters:
+        image_path: Path to the manga visual image.
+        questionnaire: The questionnaire text for evaluating the image.
+        num_profiles: Number of audience members to simulate.
+        audience_personalities: Optional list of pre-generated personality profiles.
+        audience_personality_prompt: Prompt for generating personality profiles if not provided.
+        
+        Returns:
+        A tuple containing:
             - A list of simulated audience responses.
             - A list of generated personality profiles.
-          
-        The function also builds a realistic social network and applies social influence
-        to adjust the responses.
+        
+        The function builds a realistic social network, extracts both text-based image descriptions and visual features,
+        and then combines these with personality prompts to generate comprehensive evaluation responses.
         """
         # Build the social network for the given number of agents.
         self.social_network = self.build_social_network(num_profiles)
         
+        # Extract visual features from the image.
+        image_feature_summary = self.extract_image_features(image_path)
+        
         responses = []
         generated_personalities = []
         for i in range(1, num_profiles + 1):
-            # Create a description prompt that includes cultural context.
+            # Create a description prompt that includes cultural context and image features.
             description_prompt = (
                 "Please provide a detailed description of this manga visual. "
                 "Describe the scene, characters, action, emotions, and any cultural elements depicted. "
                 "Also, take into account the current cultural context and trends. "
                 "Consider the following evaluation questions when describing the image:\n"
-                f"{questionnaire}"
+                f"{questionnaire}\n"
+                "Additional Visual Features: " + image_feature_summary
             )
             try:
                 # Generate an image description using LLM.
@@ -306,8 +351,10 @@ class LLM_MangaScoringFramework:
             responses.append(response)
             # Update the agent's memory with the generated response.
             self.update_agent_memory(i, response)
+        
         # Apply social influence adjustments based on the built social network.
         responses = self.simulate_social_interactions(responses)
+        
         return responses, generated_personalities
 
     def enforce_guidelines(self, responses):
@@ -893,8 +940,8 @@ def main():
     )
     
     # Define dummy image paths for two ad variants (A and B).
-    image_path_A = "ad_variant_A.jpg"
-    image_path_B = "ad_variant_B.jpg"
+    image_path_A = "img1.jpg"
+    image_path_B = "img1.jpg"
     
     # Simulate audience responses for Variant A.
     responses_A, personalities_A = framework.simulate_audience_responses(

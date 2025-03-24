@@ -1,0 +1,32 @@
+# requirements.txt for Advanced Multi-Agent Manga Scoring Framework
+
+# If 'llm_service' is available via a package repository, uncomment and specify its version.
+# llm_service==<version>
+
+# Numerical and Data Processing
+numpy==1.23.5
+pandas==1.5.3
+scipy==1.9.3
+
+# Graph and Clustering
+networkx==3.0
+scikit-learn==1.2.2
+sentence-transformers==2.2.2
+
+# Visualization
+rich==13.3.5
+
+# Image Processing and Deep Learning
+Pillow==9.3.0
+torch==2.0.1
+torchvision==0.15.2
+
+# Transformers and Hugging Face Tools
+transformers==4.30.0
+huggingface_hub==0.16.4
+
+# SEM Analysis
+semopy==2.3.11
+
+# Install CLIP directly from GitHub (required for image feature extraction)
+git+https://github.com/openai/CLIP.git@main#egg=clip
