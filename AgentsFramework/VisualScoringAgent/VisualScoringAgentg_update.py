@@ -16,6 +16,12 @@ from scipy.stats import ttest_ind
 from semopy import Model
 import pandas as pd
 import networkx as nx  # Used for building a realistic social network graph.
+from sklearn.cluster import KMeans
+from sentence_transformers import SentenceTransformer
+
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
 
 # Set up basic logging configuration for debugging.
 logging.basicConfig(level=logging.INFO)
@@ -355,23 +361,82 @@ class LLM_MangaScoringFramework:
     # ------------------- Advanced Analytics, Cultural Aspects & Decision Modeling -------------------
     def extract_criteria_scores(self, responses):
         """
-        Simulates extraction of scores for each evaluation criterion from responses.
+        Extracts scores for each evaluation criterion from responses in a production setting.
         
         Parameters:
-          responses: The list of responses (expected to be dictionaries with numeric ratings).
+        responses: A list of dictionaries. Each dictionary is expected to contain numeric ratings
+                    for a set of evaluation criteria.
         
         Returns:
-          A dictionary of mean scores for each criterion.
-          
-        For demonstration purposes, this function returns dummy scores.
+        A dictionary mapping each evaluation criterion to its mean score computed across all responses.
+        If a criterion is not present in the responses, its value will be None.
+        
+        The list of criteria is extensive and covers artistic, narrative, cultural, and brand health metrics.
         """
-        return {
-            "art_quality": 7.0,
-            "character_design": 8.0,
-            "narrative_impact": 6.5,
-            "emotional_impact": 7.5,
-            "cultural_impact": 7.0
-        }
+        # Define an exhaustive list of required evaluation criteria.
+        required_cols = [
+            "art_quality",             # Overall aesthetic quality and craftsmanship.
+            "character_design",        # Effectiveness in character portrayal.
+            "narrative_impact",        # Impact of the narrative on the viewer.
+            "emotional_impact",        # Emotional response elicited.
+            "cultural_impact",         # Integration and authenticity of cultural elements.
+            "composition_balance",     # Balance of visual elements.
+            "color_harmony",           # Cohesion of color usage.
+            "typography",              # Quality and integration of text.
+            "gestalt_principles",      # Coherence of elements based on Gestalt theory.
+            "visual_impact",           # Immediate visual appeal.
+            "innovation",              # Novelty and creativity.
+            "clarity",                 # Clarity in visual communication.
+            "accessibility",           # Ease of understanding by diverse audiences.
+            "narrative_structure",     # Logical flow of the narrative.
+            "symbolism",               # Use of symbolic elements.
+            "creativity",              # Overall creative expression.
+            "context_relevance",       # Fit within the current cultural or market context.
+            "soft_power",              # Ability to influence perceptions through culture.
+            "foreign_influence",       # Presence of global or international trends.
+            "local_mindset",           # Alignment with local cultural values.
+            "cultural_identity",       # Reinforcement of local cultural identity.
+            "cultural_spill",          # Degree of foreign culture integration.
+            "brand_recall",            # Ease with which the brand is remembered.
+            "brand_perception",        # Overall consumer perception of the brand.
+            "brand_preference",        # Preference for the brand over competitors.
+            "brand_equity",            # Overall strength and market value of the brand.
+            "brand_consistency",       # Consistency of the brand messaging.
+            "advertising_effectiveness",  # Effectiveness of the ad in communicating its message.
+            "consumer_trust",          # Level of trust the brand engenders.
+            "consumer_loyalty",        # Likelihood of repeat engagement.
+            "social_media_engagement", # Engagement metrics from social media.
+            "aesthetic_pleasure",      # Subjective pleasure derived from the visual.
+            "emotional_resonance",     # Depth of the emotional connection.
+            "engagement",              # Overall audience engagement.
+            "message_clarity",         # Clarity of the brand's message.
+            "empathy",                 # Ability to evoke empathetic responses.
+            "sustainability"           # Perceived ethical appeal or sustainability.
+        ]
+        
+        # Convert the list of response dictionaries to a pandas DataFrame.
+        df = pd.DataFrame(responses)
+        
+        # Initialize a dictionary to store mean scores for each criterion.
+        criteria_scores = {}
+        
+        # Iterate through each required column.
+        for col in required_cols:
+            if col in df.columns:
+                try:
+                    # Convert column values to numeric, coercing errors into NaN.
+                    df[col] = pd.to_numeric(df[col], errors='coerce')
+                    # Calculate the mean, ignoring NaN values.
+                    criteria_scores[col] = df[col].dropna().mean()
+                except Exception as e:
+                    logger.error("Error computing mean for column %s: %s", col, e)
+                    criteria_scores[col] = None
+            else:
+                # If the column is not present in the DataFrame, assign None.
+                criteria_scores[col] = None
+
+        return criteria_scores
+
 
     def apply_mcda_ahp(self, scores, criteria_weights):
         """
@@ -419,39 +484,65 @@ class LLM_MangaScoringFramework:
         Performs Structural Equation Modeling (SEM) to validate latent constructs.
         
         Parameters:
-          responses: A list of dictionaries with numeric ratings for:
-                     - art_quality
-                     - character_design
-                     - narrative_impact
-                     - emotional_impact
-                     - cultural_impact
+        responses: A list of dictionaries with numeric ratings for a comprehensive set of evaluation criteria.
         
-        The SEM model specification:
-          visual_quality         =~ art_quality + character_design
-          narrative_emotional  =~ narrative_impact + emotional_impact
-          cultural_authenticity =~ cultural_impact
+        The exhaustive list of required columns includes:
+        - Traditional Artistic and Narrative Quality: art_quality, character_design, narrative_impact, emotional_impact, cultural_impact
+        - Visual Graphic Theory Parameters: composition_balance, color_harmony, typography, gestalt_principles, visual_impact, innovation, clarity, accessibility
+        - Narrative and Literary Elements: narrative_structure, symbolism, creativity, context_relevance
+        - Cultural Influence and Globalization: soft_power, foreign_influence, local_mindset, cultural_identity, cultural_spill
+        - Brand Health and Consumer Perception: brand_recall, brand_perception, brand_preference, brand_equity, brand_consistency, advertising_effectiveness, consumer_trust, consumer_loyalty, social_media_engagement
+        - Additional Emotional and Experiential Metrics: aesthetic_pleasure, emotional_resonance, engagement, message_clarity, empathy, sustainability
+        
+        The updated SEM model specification is defined as:
+        visual_quality         =~ art_quality + character_design + composition_balance + color_harmony + visual_impact
+        narrative_quality      =~ narrative_impact + narrative_structure + symbolism + creativity + context_relevance
+        cultural_authenticity  =~ cultural_impact + soft_power + foreign_influence + local_mindset + cultural_identity + cultural_spill
+        brand_health           =~ brand_recall + brand_perception + brand_preference + brand_equity + brand_consistency + advertising_effectiveness + consumer_trust + consumer_loyalty + social_media_engagement
+        emotional_experience   =~ emotional_impact + aesthetic_pleasure + emotional_resonance + engagement + message_clarity + empathy + sustainability
         
         Returns:
-          A dictionary containing fit indices and parameter estimates from the SEM analysis.
-          
+        A dictionary containing fit indices and parameter estimates from the SEM analysis.
+        
         This analysis helps validate whether the observed variables load well onto the latent constructs.
         """
         try:
-            # Convert the list of response dictionaries into a pandas DataFrame.
+            # Convert the list of response dictionaries into a DataFrame.
             data = pd.DataFrame(responses)
-            # Ensure that all required columns are present.
-            required_cols = ["art_quality", "character_design", "narrative_impact", "emotional_impact", "cultural_impact"]
-            if not all(col in data.columns for col in required_cols):
-                raise ValueError("Data is missing one or more required columns: " + ", ".join(required_cols))
             
-            # Define the SEM model specification.
+            # Define the exhaustive list of required columns.
+            required_cols = [
+                "art_quality", "character_design", "narrative_impact", "emotional_impact", "cultural_impact",
+                "composition_balance", "color_harmony", "typography", "gestalt_principles", "visual_impact",
+                "innovation", "clarity", "accessibility",
+                "narrative_structure", "symbolism", "creativity", "context_relevance",
+                "soft_power", "foreign_influence", "local_mindset", "cultural_identity", "cultural_spill",
+                "brand_recall", "brand_perception", "brand_preference", "brand_equity", "brand_consistency",
+                "advertising_effectiveness", "consumer_trust", "consumer_loyalty", "social_media_engagement",
+                "aesthetic_pleasure", "emotional_resonance", "engagement", "message_clarity", "empathy", "sustainability"
+            ]
+            
+            # Verify that all required columns are present in the data.
+            missing_cols = [col for col in required_cols if col not in data.columns]
+            if missing_cols:
+                raise ValueError("Data is missing one or more required columns: " + ", ".join(missing_cols))
+            
+            # Optionally, convert all required columns to numeric, coercing non-numeric entries to NaN.
+            for col in required_cols:
+                data[col] = pd.to_numeric(data[col], errors='coerce')
+            
+            # Define the SEM model specification with multiple latent constructs.
             model_desc = """
-            visual_quality =~ art_quality + character_design
-            narrative_emotional =~ narrative_impact + emotional_impact
-            cultural_authenticity =~ cultural_impact
+            visual_quality         =~ art_quality + character_design + composition_balance + color_harmony + visual_impact
+            narrative_quality      =~ narrative_impact + narrative_structure + symbolism + creativity + context_relevance
+            cultural_authenticity  =~ cultural_impact + soft_power + foreign_influence + local_mindset + cultural_identity + cultural_spill
+            brand_health           =~ brand_recall + brand_perception + brand_preference + brand_equity + brand_consistency + advertising_effectiveness + consumer_trust + consumer_loyalty + social_media_engagement
+            emotional_experience   =~ emotional_impact + aesthetic_pleasure + emotional_resonance + engagement + message_clarity + empathy + sustainability
             """
-            # Create and fit the SEM model using semopy.
+            
+            # Create the SEM model.
             sem_model = Model(model_desc)
+            # Fit the model using the data.
             sem_model.fit(data)
             # Calculate model fit statistics.
             stats = sem_model.calc_stats()
@@ -464,60 +555,101 @@ class LLM_MangaScoringFramework:
         except Exception as e:
             logger.error("SEM analysis failed: %s", e)
             sem_results = {"error": str(e)}
+        
         return sem_results
+
 
     def advanced_analytics_pipeline(self, responses, aggregated_score, prior_score=None, criteria_weights=None):
         """
         Integrates Bayesian updating, SEM validation, and MCDA (via AHP) including cultural criteria.
         
         Parameters:
-          responses: A list of responses that can be parsed into a DataFrame with the following numeric columns:
-                     art_quality, character_design, narrative_impact, emotional_impact, cultural_impact.
-          aggregated_score: The initial aggregated score.
-          prior_score: Optional prior aggregated score for Bayesian updating.
-          criteria_weights: Optional dictionary specifying weights for each evaluation criterion.
+        responses: A list of responses that can be parsed into a DataFrame containing numeric ratings.
+                    The DataFrame is expected to have an extensive set of columns such as:
+                    art_quality, character_design, narrative_impact, emotional_impact, cultural_impact,
+                    composition_balance, color_harmony, typography, gestalt_principles, visual_impact,
+                    innovation, clarity, accessibility, narrative_structure, symbolism, creativity,
+                    context_relevance, soft_power, foreign_influence, local_mindset, cultural_identity,
+                    cultural_spill, brand_recall, brand_perception, brand_preference, brand_equity,
+                    brand_consistency, advertising_effectiveness, consumer_trust, consumer_loyalty,
+                    social_media_engagement, aesthetic_pleasure, emotional_resonance, engagement,
+                    message_clarity, empathy, sustainability.
+        aggregated_score: The initial aggregated score.
+        prior_score: Optional prior aggregated score for Bayesian updating.
+        criteria_weights: Optional dictionary specifying weights for each evaluation criterion.
+                            If not provided, a default dictionary for a selected subset of criteria will be used.
         
         Returns:
-          A dictionary containing:
+        A dictionary containing:
             - initial_aggregated_score: The original aggregated score.
             - mcda_weighted_score: The weighted score computed via MCDA/AHP.
             - bayesian_updated_score: The aggregated score updated using Bayesian methods.
             - sem_validation: Results from the SEM analysis.
+            
+        The function computes the mean score for each criterion present in criteria_weights (or a default set)
+        from the responses DataFrame, then computes a weighted average (MCDA), applies Bayesian updating, and finally
+        performs SEM validation on the full dataset.
         """
         try:
             agg_score = float(aggregated_score)
         except (ValueError, TypeError):
             agg_score = 0.0
 
+        # Convert responses to a DataFrame.
         try:
-            # Convert responses to a DataFrame and compute the mean for each evaluation criterion.
             df = pd.DataFrame(responses)
-            criteria_scores = {
-                "art_quality": df["art_quality"].mean(),
-                "character_design": df["character_design"].mean(),
-                "narrative_impact": df["narrative_impact"].mean(),
-                "emotional_impact": df["emotional_impact"].mean(),
-                "cultural_impact": df["cultural_impact"].mean()
-            }
         except Exception as e:
-            logger.error("Failed to extract criteria scores from responses: %s", e)
-            # Fallback to dummy extraction if real extraction fails.
-            criteria_scores = self.extract_criteria_scores(responses)
-        
-        # Set default weights if none are provided.
+            logger.error("Failed to convert responses to DataFrame: %s", e)
+            df = pd.DataFrame()
+
+        # If no criteria_weights are provided, use a default exhaustive subset with normalized weights.
+        # Here we choose a subset that is meaningful for MCDA. The weights don't have to sum to 1, 
+        # because the AHP function divides by the total weight.
         if criteria_weights is None:
             criteria_weights = {
-                "art_quality": 0.25,
-                "character_design": 0.2,
-                "narrative_impact": 0.2,
-                "emotional_impact": 0.2,
-                "cultural_impact": 0.15
+                "art_quality": 0.15,
+                "character_design": 0.10,
+                "narrative_impact": 0.10,
+                "emotional_impact": 0.10,
+                "cultural_impact": 0.10,
+                "composition_balance": 0.05,
+                "color_harmony": 0.05,
+                "visual_impact": 0.05,
+                "innovation": 0.05,
+                "narrative_structure": 0.05,
+                "symbolism": 0.05,
+                "soft_power": 0.03,
+                "brand_equity": 0.03,
+                "consumer_trust": 0.03,
+                "aesthetic_pleasure": 0.03
             }
-        # Compute the weighted score using MCDA/AHP.
+        
+        # Initialize an empty dictionary for criteria scores.
+        criteria_scores = {}
+        
+        # Compute the mean score for each criterion defined in criteria_weights.
+        for criterion in criteria_weights.keys():
+            if criterion in df.columns:
+                try:
+                    # Convert the column to numeric, coercing errors.
+                    df[criterion] = pd.to_numeric(df[criterion], errors='coerce')
+                    # Compute the mean, ignoring NaN values.
+                    criteria_scores[criterion] = df[criterion].dropna().mean()
+                except Exception as e:
+                    logger.error("Error computing mean for %s: %s", criterion, e)
+                    criteria_scores[criterion] = None
+            else:
+                # Log a warning if the criterion is missing.
+                logger.warning("Criterion %s not found in responses; setting score to None", criterion)
+                criteria_scores[criterion] = None
+
+        # Compute the weighted score using the MCDA/AHP approach.
         mcda_score = self.apply_mcda_ahp(criteria_scores, criteria_weights)
-        # Update the aggregated score using Bayesian updating.
+        
+        # Apply Bayesian updating to the aggregated score.
         updated_score = self.apply_bayesian_updating(agg_score, prior_score, confidence=0.6)
-        # Validate latent constructs using SEM.
+        
+        # Validate the latent constructs using SEM.
         sem_validation = self.validate_with_sem(responses)
         
         return {
@@ -631,49 +763,107 @@ class LLM_MangaScoringFramework:
 
     def segment_responses_by_demographic(self, personalities):
         """
-        Segments audience personalities into demographic or psychographic groups.
-        
+        Segments audience personalities into demographic or psychographic groups using text embeddings and clustering.
+
         Parameters:
-          personalities: A list of personality profile strings.
-        
+        personalities: A list of personality profile strings.
+
         Returns:
-          A dictionary with segmented groups (e.g., Segment A and Segment B).
-          
-        This function uses dummy logic (keyword matching or random assignment) to simulate segmentation.
+        A dictionary mapping cluster labels (e.g., "Segment 0", "Segment 1", etc.)
+        to lists of personality profiles that belong to that segment.
+
+        Production-Ready Explanation:
+        - This function uses a pre-trained SentenceTransformer model (e.g., 'all-MiniLM-L6-v2')
+            to convert each personality profile into a dense vector (embedding).
+        - KMeans clustering is then applied to these embeddings to group profiles into clusters
+            based on semantic similarity.
+        - The number of clusters (num_clusters) is set to 2 by default but can be adjusted or
+            dynamically determined in a production system.
+        - This method provides a more robust and data-driven segmentation compared to rule-based approaches.
         """
-        segments = {"Segment A": [], "Segment B": []}
-        for personality in personalities:
-            # Dummy segmentation: check if the word "extrovert" appears or use a random condition.
-            segment = "Segment A" if "extrovert" in personality.lower() or random.random() > 0.5 else "Segment B"
-            segments[segment].append(personality)
+        # Initialize the pre-trained sentence transformer model.
+        model = SentenceTransformer('all-MiniLM-L6-v2')
+        
+        # Compute embeddings for each personality profile.
+        embeddings = model.encode(personalities)
+        
+        # Define the number of clusters; in production, this may be tuned or passed as a parameter.
+        num_clusters = 2
+        
+        # Initialize and fit the KMeans clustering model on the embeddings.
+        kmeans = KMeans(n_clusters=num_clusters, random_state=42)
+        labels = kmeans.fit_predict(embeddings)
+        
+        # Organize the personality profiles into clusters.
+        segments = {}
+        for cluster_id in range(num_clusters):
+            segment_label = f"Segment {cluster_id}"
+            segments[segment_label] = [
+                personality for personality, label in zip(personalities, labels) if label == cluster_id
+            ]
+        
         return segments
 
     def display_dashboard(self, analytics_results, qualitative_summary, reliability, p_value, segments):
         """
-        Displays a summary dashboard with key analytics.
+        Production-ready display dashboard function using the Rich library.
         
         Parameters:
-          analytics_results: Dictionary containing scores from the advanced analytics pipeline.
-          qualitative_summary: Summary of qualitative feedback.
-          reliability: Inter-rater reliability metric.
-          p_value: p-value from the statistical test comparing variants.
-          segments: Demographic/psychographic segments of the audience.
+        analytics_results: Dictionary containing scores from the advanced analytics pipeline.
+        qualitative_summary: Summary of qualitative feedback.
+        reliability: Inter-rater reliability metric.
+        p_value: p-value from the statistical test comparing variants.
+        segments: Dictionary with demographic/psychographic segments of the audience.
         
-        This function prints a formatted dashboard summarizing all key results.
+        This function uses Rich to create a well-formatted dashboard with:
+        - A table for key numerical metrics.
+        - Panels for SEM validation results, qualitative feedback, and audience segments.
         """
-        dashboard = (
-            "\n--- Analytics Dashboard ---\n"
-            f"Initial Aggregated Score: {analytics_results.get('initial_aggregated_score')}\n"
-            f"MCDA Weighted Score: {analytics_results.get('mcda_weighted_score')}\n"
-            f"Bayesian Updated Score: {analytics_results.get('bayesian_updated_score')}\n"
-            f"SEM Validation Results: {analytics_results.get('sem_validation')}\n"
-            f"Qualitative Feedback Summary: {qualitative_summary}\n"
-            f"Inter-Rater Reliability (Cronbach's alpha): {reliability}\n"
-            f"Statistical Test p-value (A/B Comparison): {p_value}\n"
-            f"Audience Segments: {segments}\n"
-            "-----------------------------\n"
+        # Initialize the rich console.
+        console = Console()
+        
+        # Create a table for the key numeric metrics.
+        table = Table(title="Analytics Dashboard", show_header=True, header_style="bold magenta")
+        table.add_column("Metric", style="dim", width=30)
+        table.add_column("Value", justify="right", style="cyan")
+        
+        # Add rows for each key metric.
+        table.add_row("Initial Aggregated Score", str(analytics_results.get('initial_aggregated_score', 'N/A')))
+        table.add_row("MCDA Weighted Score", str(analytics_results.get('mcda_weighted_score', 'N/A')))
+        table.add_row("Bayesian Updated Score", str(analytics_results.get('bayesian_updated_score', 'N/A')))
+        table.add_row("Inter-Rater Reliability", str(reliability))
+        table.add_row("Statistical Test p-value", str(p_value))
+        
+        # Create a panel for the SEM validation results.
+        sem_results = analytics_results.get('sem_validation', {})
+        sem_panel = Panel(
+            str(sem_results),
+            title="SEM Validation Results",
+            subtitle="Fit Indices and Parameter Estimates",
+            style="green"
         )
-        print(dashboard)
+        
+        # Create a panel for the qualitative feedback summary.
+        qual_panel = Panel(
+            qualitative_summary,
+            title="Qualitative Feedback Summary",
+            style="blue"
+        )
+        
+        # Format audience segments as a multi-line string.
+        segments_str = "\n".join([f"[bold]{segment}:[/bold] {', '.join(personas)}" for segment, personas in segments.items()])
+        segments_panel = Panel(
+            segments_str,
+            title="Audience Segments",
+            style="yellow"
+        )
+        
+        # Display the table and panels.
+        console.print(table)
+        console.print(sem_panel)
+        console.print(qual_panel)
+        console.print(segments_panel)
+
 
 # ------------------- Main Function -------------------
 def main():
