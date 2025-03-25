@@ -1,0 +1,23 @@
+To calculate the average score for the manga visual and normalize it to be out of 100, let's first extract all the numeric scores from the audience responses:
+
+- Audience Member 1: 9, 8, 7, 8, 9
+- Audience Member 2: 9, 8, 8, 9, 9
+- Audience Member 3: 9, 8, 8, 9, 8
+- Audience Member 4: 8, 9, 7, 8, 9
+- Audience Member 5: 9, 8, 7, 8, 9
+
+Now, add up all the scores:
+
+\(9 + 8 + 7 + 8 + 9 + 9 + 8 + 8 + 9 + 9 + 9 + 8 + 8 + 9 + 8 + 8 + 9 + 7 + 8 + 9 + 9 + 8 + 7 + 8 + 9 = 204\)
+
+There are a total of 25 scores (5 scores per audience member times 5 audience members).
+
+Next, calculate the average score by dividing the sum of the scores by the number of scores:
+
+\(\text{Average Score} = \frac{204}{25} = 8.16\)
+
+To normalize this score to be out of 100, multiply the average by 10:
+
+\(\text{Normalized Score} = 8.16 \times 10 = 81.6\)
+
+The final aggregated score, normalized to be out of 100, is 81.6.

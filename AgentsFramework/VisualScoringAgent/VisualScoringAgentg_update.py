@@ -15,7 +15,7 @@ import sys
 root_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 if root_path not in sys.path:
     sys.path.insert(0, root_path)
-from llm_service.llm_generator import generate_llm_response, generate_image_description
+from llm_service.llm_generator import generate_llm_response, generate_image_description,generate_llm_json
 import logging
 import numpy as np
 import random
@@ -499,9 +499,16 @@ class LLM_MangaScoringFramework:
         The score is computed as the weighted average of the criteria scores.
         """
         total_weight = sum(criteria_weights.values())
-        weighted_score = sum(scores[criterion] * criteria_weights.get(criterion, 0) for criterion in scores) / total_weight
+        weighted_sum = 0
+        for criterion in criteria_weights:
+            # Use 0 if a score is missing.
+            score = scores.get(criterion, 0)
+            if score is None:
+                score = 0
+            weighted_sum += score * criteria_weights[criterion]
+        weighted_score = weighted_sum / total_weight if total_weight != 0 else 0
         return weighted_score
-
+    
     def apply_bayesian_updating(self, aggregated_score, prior_score=None, confidence=0.5):
         """
         Applies Bayesian updating to refine the aggregated score.
@@ -637,21 +644,26 @@ class LLM_MangaScoringFramework:
         from the responses DataFrame, then computes a weighted average (MCDA), applies Bayesian updating, and finally
         performs SEM validation on the full dataset.
         """
-        try:
-            agg_score = float(aggregated_score)
-        except (ValueError, TypeError):
-            agg_score = 0.0
-
-        # Convert responses to a DataFrame.
+        # Check if responses are in the expected dictionary format.
+        if not responses or not isinstance(responses[0], dict):
+            logger.warning("Responses are not in expected dictionary format for advanced analytics. Skipping advanced analytics pipeline.")
+            try:
+                agg_score = float(aggregated_score)
+            except:
+                agg_score = 0.0
+            return {
+                "initial_aggregated_score": agg_score,
+                "mcda_weighted_score": agg_score,
+                "bayesian_updated_score": self.apply_bayesian_updating(agg_score, prior_score, confidence=0.6),
+                "sem_validation": {"error": "Responses not structured for SEM analysis."}
+            }
+        
         try:
             df = pd.DataFrame(responses)
         except Exception as e:
             logger.error("Failed to convert responses to DataFrame: %s", e)
             df = pd.DataFrame()
-
-        # If no criteria_weights are provided, use a default exhaustive subset with normalized weights.
-        # Here we choose a subset that is meaningful for MCDA. The weights don't have to sum to 1, 
-        # because the AHP function divides by the total weight.
+        
         if criteria_weights is None:
             criteria_weights = {
                 "art_quality": 0.15,
@@ -671,32 +683,25 @@ class LLM_MangaScoringFramework:
                 "aesthetic_pleasure": 0.03
             }
         
-        # Initialize an empty dictionary for criteria scores.
         criteria_scores = {}
-        
-        # Compute the mean score for each criterion defined in criteria_weights.
         for criterion in criteria_weights.keys():
             if criterion in df.columns:
                 try:
-                    # Convert the column to numeric, coercing errors.
                     df[criterion] = pd.to_numeric(df[criterion], errors='coerce')
-                    # Compute the mean, ignoring NaN values.
                     criteria_scores[criterion] = df[criterion].dropna().mean()
                 except Exception as e:
                     logger.error("Error computing mean for %s: %s", criterion, e)
-                    criteria_scores[criterion] = None
+                    criteria_scores[criterion] = 0
             else:
-                # Log a warning if the criterion is missing.
-                logger.warning("Criterion %s not found in responses; setting score to None", criterion)
-                criteria_scores[criterion] = None
+                logger.warning("Criterion %s not found in responses; setting score to 0", criterion)
+                criteria_scores[criterion] = 0
 
-        # Compute the weighted score using the MCDA/AHP approach.
         mcda_score = self.apply_mcda_ahp(criteria_scores, criteria_weights)
-        
-        # Apply Bayesian updating to the aggregated score.
+        try:
+            agg_score = float(aggregated_score)
+        except (ValueError, TypeError):
+            agg_score = 0.0
         updated_score = self.apply_bayesian_updating(agg_score, prior_score, confidence=0.6)
-        
-        # Validate the latent constructs using SEM.
         sem_validation = self.validate_with_sem(responses)
         
         return {
@@ -910,112 +915,152 @@ class LLM_MangaScoringFramework:
         console.print(sem_panel)
         console.print(qual_panel)
         console.print(segments_panel)
+    
+    def extract_numeric_scores(self, responses):
+        """
+        Extracts numeric scores from validated responses.
+        Assumes each response is a string containing lines formatted as:
+        'Question <number>: <score> - Explanation'
+        Returns a list of lists of numeric scores.
+        """
+        import re
+        all_scores = []
+        for response in responses:
+            scores = []
+            lines = response.splitlines()
+            for line in lines:
+                match = re.search(r"Question\s+\d+:\s*(\d+)", line)
+                if match:
+                    try:
+                        score = float(match.group(1))
+                    except Exception:
+                        score = 0.0
+                    scores.append(score)
+            if scores:
+                all_scores.append(scores)
+        return all_scores
 
 
 # ------------------- Main Function -------------------
 def main():
     """
-    Main function to simulate the entire evaluation process.
-    
-    This function:
-      - Instantiates the scoring framework.
-      - Generates a questionnaire.
-      - Simulates audience responses for two ad variants.
-      - Validates and aggregates responses.
-      - Runs advanced analytics (including SEM, MCDA, and Bayesian updating).
-      - Computes additional statistical measures.
-      - Displays a dashboard summarizing all results.
+    Production-ready main function for evaluating manga visuals.
+    All intermediate results are saved to text files for auditability.
     """
-    # Instantiate the scoring framework with a guidelines prompt.
     framework = LLM_MangaScoringFramework(
         guidelines_prompt="Generate guidelines to evaluate manga visuals considering art quality, character design, narrative impact, emotional tone, and cultural authenticity.",
         scale=10
     )
-    
-    # Generate a questionnaire with prompts focusing on cultural context, narrative quality, and emotional depth.
+
     questionnaire = framework.generate_questionnaire(
         num_questions=5,
         user_prompt="Focus on cultural context, narrative quality, emotional depth, and ad clarity.",
-        expert_context="Expert evaluation should include aesthetics, cultural resonance, narrative effectiveness, and ad engagement."
+        expert_context="Evaluation should include aesthetics, cultural resonance, narrative effectiveness, and engagement."
     )
-    
-    # Define dummy image paths for two ad variants (A and B).
+    with open("results/questionnaire.txt", "w") as f:
+        f.write(questionnaire)
+
     image_path_A = "img1.jpg"
     image_path_B = "img1.jpg"
-    
-    # Simulate audience responses for Variant A.
+
     responses_A, personalities_A = framework.simulate_audience_responses(
         image_path_A,
         questionnaire,
         num_profiles=5,
-        audience_personality_prompt="Generate detailed personality profiles that include cultural background, psychological traits, emotional state, and memory of previous feedback."
+        audience_personality_prompt="Generate detailed personality profiles with cultural background, psychological traits, and emotional state."
     )
-    # Enforce scoring guidelines on the generated responses.
+    with open("results/responses_A.txt", "w") as f:
+        f.write("\n".join(responses_A))
+
     validated_responses_A = framework.enforce_guidelines(responses_A)
-    # Aggregate numeric scores for Variant A.
+    with open("results/validated_responses_A.txt", "w") as f:
+        f.write("\n".join(validated_responses_A))
+
     aggregated_score_A = framework.aggregate_scores(validated_responses_A)
-    
-    # Simulate audience responses for Variant B.
+    with open("results/aggregated_score_A.txt", "w") as f:
+        f.write(aggregated_score_A)
+
+    analytics_results_A = framework.advanced_analytics_pipeline(
+        validated_responses_A,
+        aggregated_score_A
+    )
+    with open("results/analytics_results_A.txt", "w") as f:
+        f.write(str(analytics_results_A))
+
+    qualitative_summary_A = framework.analyze_qualitative_feedback(validated_responses_A)
+    with open("results/qualitative_summary_A.txt", "w") as f:
+        f.write(qualitative_summary_A)
+
+    numeric_scores_A = framework.extract_numeric_scores(validated_responses_A)
+    reliability_A = framework.compute_inter_rater_reliability(numeric_scores_A)
+    with open("results/reliability_A.txt", "w") as f:
+        f.write(str(reliability_A))
+
+    segments_A = framework.segment_responses_by_demographic(personalities_A)
+    with open("results/segments_A.txt", "w") as f:
+        f.write(str(segments_A))
+
+    explanation_A = framework.explain_process(validated_responses_A, aggregated_score_A)
+    with open("results/explanation_A.txt", "w") as f:
+        f.write(explanation_A)
+
     responses_B, personalities_B = framework.simulate_audience_responses(
         image_path_B,
         questionnaire,
         num_profiles=5,
-        audience_personality_prompt="Generate detailed personality profiles that include cultural background, psychological traits, emotional state, and memory of previous feedback."
+        audience_personality_prompt="Generate detailed personality profiles with cultural background, psychological traits, and emotional state."
     )
-    # Enforce scoring guidelines on Variant B responses.
+    with open("results/responses_B.txt", "w") as f:
+        f.write("\n".join(responses_B))
+
     validated_responses_B = framework.enforce_guidelines(responses_B)
-    # Aggregate numeric scores for Variant B.
+    with open("results/validated_responses_B.txt", "w") as f:
+        f.write("\n".join(validated_responses_B))
+
     aggregated_score_B = framework.aggregate_scores(validated_responses_B)
-    
-    # Run advanced analytics for Variant A (using a dummy prior score of 80.0).
-    analytics_results_A = framework.advanced_analytics_pipeline(
-        validated_responses_A,
-        aggregated_score_A,
-        prior_score=80.0
-    )
-    
-    # Run advanced analytics for Variant B.
+    with open("results/aggregated_score_B.txt", "w") as f:
+        f.write(aggregated_score_B)
+
     analytics_results_B = framework.advanced_analytics_pipeline(
         validated_responses_B,
-        aggregated_score_B,
-        prior_score=80.0
+        aggregated_score_B
     )
-    
-    # Analyze qualitative feedback for both variants.
-    qualitative_summary_A = framework.analyze_qualitative_feedback(validated_responses_A)
-    qualitative_summary_B = framework.analyze_qualitative_feedback(validated_responses_B)
-    
-    # Compute inter-rater reliability using dummy numeric scores (for demonstration).
-    dummy_numeric_scores_A = np.random.randint(1, 11, (5, 5)).tolist()  # 5 raters, 5 questions each.
-    dummy_numeric_scores_B = np.random.randint(1, 11, (5, 5)).tolist()
-    reliability_A = framework.compute_inter_rater_reliability(dummy_numeric_scores_A)
-    reliability_B = framework.compute_inter_rater_reliability(dummy_numeric_scores_B)
-    
-    # Simulate multiple aggregated scores for statistical testing.
-    simulated_scores_A = [float(aggregated_score_A) + random.uniform(-2, 2) for _ in range(10)]
-    simulated_scores_B = [float(aggregated_score_B) + random.uniform(-2, 2) for _ in range(10)]
-    p_value = framework.perform_statistical_test(simulated_scores_A, simulated_scores_B)
-    
-    # Segment audience personalities by demographic/psychographic factors.
-    segments_A = framework.segment_responses_by_demographic(personalities_A)
-    segments_B = framework.segment_responses_by_demographic(personalities_B)
-    
-    # Generate an explanation of the evaluation process for Variant A.
-    explanation_A = framework.explain_process(validated_responses_A, aggregated_score_A)
-    
-    # Display the analytics dashboard for Variant A.
-    print("----- Variant A Analysis -----")
-    framework.display_dashboard(analytics_results_A, qualitative_summary_A, reliability_A, p_value, segments_A)
-    print("Explanation for Variant A:")
-    print(explanation_A)
-    
-    # Display the analytics dashboard for Variant B.
-    print("\n----- Variant B Analysis -----")
-    framework.display_dashboard(analytics_results_B, qualitative_summary_B, reliability_B, p_value, segments_B)
-    print("Explanation for Variant B:")
-    explanation_B = framework.explain_process(validated_responses_B, aggregated_score_B)
-    print(explanation_B)
+    with open("results/analytics_results_B.txt", "w") as f:
+        f.write(str(analytics_results_B))
 
-# Run the main function when the script is executed.
+    qualitative_summary_B = framework.analyze_qualitative_feedback(validated_responses_B)
+    with open("results/qualitative_summary_B.txt", "w") as f:
+        f.write(qualitative_summary_B)
+
+    numeric_scores_B = framework.extract_numeric_scores(validated_responses_B)
+    reliability_B = framework.compute_inter_rater_reliability(numeric_scores_B)
+    with open("results/reliability_B.txt", "w") as f:
+        f.write(str(reliability_B))
+
+    segments_B = framework.segment_responses_by_demographic(personalities_B)
+    with open("results/segments_B.txt", "w") as f:
+        f.write(str(segments_B))
+
+    explanation_B = framework.explain_process(validated_responses_B, aggregated_score_B)
+    with open("results/explanation_B.txt", "w") as f:
+        f.write(explanation_B)
+
+    p_value = framework.perform_statistical_test(
+        [np.mean(scores) for scores in numeric_scores_A],
+        [np.mean(scores) for scores in numeric_scores_B]
+    )
+    with open("results/statistical_test_p_value.txt", "w") as f:
+        f.write(str(p_value))
+
+    console = Console()
+    console.print("----- Variant A Analysis -----")
+    framework.display_dashboard(analytics_results_A, qualitative_summary_A, reliability_A, p_value, segments_A)
+
+    console.print("\n----- Variant B Analysis -----")
+    framework.display_dashboard(analytics_results_B, qualitative_summary_B, reliability_B, p_value, segments_B)
+
+    console.print("\nEvaluation explanations saved in results folder.")
+
 if __name__ == "__main__":
+    os.makedirs("results", exist_ok=True)
     main()
